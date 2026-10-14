@@ -1,0 +1,30 @@
+{
+  "source_notebook": "notebooks/legal_document_rag.ipynb",
+  "evaluated_questions": 10,
+  "scores": {
+    "hit_rate": {
+      "mean_score": 0.9,
+      "valid_samples": 10
+    },
+    "mrr": {
+      "mean_score": 0.623,
+      "valid_samples": 10
+    },
+    "faithfulness": {
+      "mean_score": 0.802,
+      "valid_samples": 10
+    },
+    "answer_relevancy": {
+      "mean_score": 0.525,
+      "valid_samples": 10
+    },
+    "context_precision": {
+      "mean_score": 0.757,
+      "valid_samples": 10
+    },
+    "context_recall": {
+      "mean_score": 0.871,
+      "valid_samples": 10
+    }
+  }
+}
