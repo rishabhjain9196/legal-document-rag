@@ -8,7 +8,7 @@ This project answers questions about 644 contracts from the [LegalBench-RAG](htt
 
 ![Pipeline overview: indexing, contract-aware retrieval and evaluation](docs/assets/rag-process.svg)
 
-**Explore:** [Notebook](notebooks/legal_document_rag.ipynb) · [Walkthrough](docs/walkthrough.md) · [Dataset setup](data/README.md) · [Evaluation chart](docs/assets/evaluation.png)
+**Explore:** [Visual report](https://rishabhjain9196.github.io/legal-document-rag/) · [Notebook](notebooks/legal_document_rag.ipynb) · [Walkthrough](docs/walkthrough.md) · [Dataset setup](data/README.md) · [Evaluation chart](docs/assets/evaluation.png)
 
 ## Results
 
@@ -68,6 +68,7 @@ The saved outputs, charts and documentation can be read without running anything
 ```text
 notebooks/legal_document_rag.ipynb   End-to-end pipeline with saved results
 docs/walkthrough.md                  Process diagrams, charts and findings
+docs/index.html                      Visual report, published with GitHub Pages
 docs/assets/                         Pipeline diagram, charts and metrics.json
 scripts/export_assets.py             Exports charts and scores from the saved notebook
 data/README.md                       Dataset download and folder layout
