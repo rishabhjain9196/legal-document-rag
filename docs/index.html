@@ -1,409 +1,189 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Legal Document RAG</title>
-<meta name="description" content="Question answering over 644 legal contracts. The pipeline finds the contract a question names, retrieves its clauses and answers with quoted, cited evidence.">
-<style>
-:root {
-  --ink: #111827; --muted: #4b5563; --faint: #9ca3af; --line: #e5e7eb;
-  --bg: #f8fafc; --card: #ffffff; --night: #0f0b24;
-  --red: #dc2626; --amber: #f59e0b; --green: #16a34a; --blue: #4f46e5;
-  --nda: #3b82f6; --cuad: #f97316; --maud: #16a34a; --pqa: #dc2626;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 64px; }
-body { margin: 0; font: 17px/1.65 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
-a { color: var(--blue); }
-img { max-width: 100%; display: block; }
-code { background: #eef2ff; padding: 1px 6px; border-radius: 5px; font-size: 0.9em; }
-
-/* Navigation */
-nav { position: sticky; top: 0; z-index: 10; background: rgba(15, 11, 36, 0.94); backdrop-filter: blur(6px); }
-nav .inner { max-width: 1160px; margin: auto; padding: 0 24px; display: flex; gap: 22px; align-items: center; overflow-x: auto; white-space: nowrap; height: 54px; scrollbar-width: none; }
-nav .inner::-webkit-scrollbar { display: none; }
-nav .brand { color: #fff; font-weight: 700; margin-right: 10px; text-decoration: none; }
-nav a.link { color: #cbd5e1; text-decoration: none; font-size: 14px; }
-nav a.link:hover { color: #fff; }
-
-/* Hero */
-header.hero { background: radial-gradient(1200px 500px at 85% 0%, rgba(124, 58, 237, 0.45), transparent 60%),
-                            radial-gradient(900px 500px at 10% 100%, rgba(37, 99, 235, 0.35), transparent 60%), var(--night);
-              color: #fff; padding: 84px 24px 72px; }
-header.hero .inner { max-width: 1160px; margin: auto; }
-.kicker { text-transform: uppercase; letter-spacing: 0.14em; font-size: 13px; color: #c4b5fd; font-weight: 600; }
-header.hero h1 { font-size: clamp(40px, 6vw, 68px); line-height: 1.05; margin: 14px 0 18px; letter-spacing: -0.02em; }
-header.hero .lede { font-size: 21px; max-width: 780px; color: #d1d5db; margin: 0 0 40px; }
-.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
-.stat { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 16px 18px; }
-.stat b { display: block; font-size: 28px; line-height: 1.15; white-space: nowrap; }
-.stat span { color: #cbd5e1; font-size: 14px; line-height: 1.4; display: block; margin-top: 4px; }
-.hero .actions { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
-.btn { display: inline-block; padding: 11px 18px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; }
-.btn.primary { background: #fff; color: var(--night); }
-.btn.ghost { color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); }
-
-/* Layout */
-main { max-width: 1160px; margin: auto; padding: 0 24px 40px; }
-section { padding: 64px 0 8px; }
-section > h2 { font-size: 34px; margin: 0 0 6px; letter-spacing: -0.01em; }
-.num { color: var(--faint); font-weight: 600; margin-right: 10px; }
-.intro { color: var(--muted); max-width: 780px; margin: 0 0 22px; font-size: 18px; }
-h3 { font-size: 22px; margin: 40px 0 10px; }
-
-/* Key findings */
-.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: -36px; }
-.finding { background: var(--card); border-radius: 16px; padding: 22px 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border-top: 5px solid var(--blue); }
-.finding.red { border-color: var(--red); } .finding.amber { border-color: var(--amber); } .finding.green { border-color: var(--green); }
-.finding b { font-size: 34px; display: block; line-height: 1.1; margin-bottom: 6px; }
-.finding p { margin: 0; color: var(--muted); font-size: 15.5px; }
-
-/* Figures */
-figure { margin: 18px 0 8px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05); }
-figure a { display: block; cursor: zoom-in; }
-figure img { border-radius: 8px; margin: auto; }
-figure.tall img { max-height: 860px; width: auto; }
-figcaption { color: var(--faint); font-size: 13px; padding: 10px 6px 0; }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-
-/* Takeaways */
-ul.takeaways { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
-ul.takeaways li { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--blue); border-radius: 10px; padding: 12px 16px; }
-ul.takeaways.red li { border-left-color: var(--red); }
-ul.takeaways.green li { border-left-color: var(--green); }
-ul.takeaways.amber li { border-left-color: var(--amber); }
-.howto { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 14px 18px; margin: 16px 0; font-size: 15.5px; }
-
-/* Example question */
-.qa { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05); display: grid; gap: 14px; }
-.qa .label { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); font-weight: 700; }
-.qa .route { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.pill { display: inline-block; border-radius: 999px; padding: 5px 12px; font-size: 14.5px; }
-.pill.contract { background: #ede9fe; color: #5b21b6; }
-.pill.question { background: #dbeafe; color: #1e40af; }
-.arrow { color: var(--faint); }
-blockquote { margin: 0; border-left: 4px solid var(--blue); background: #f5f3ff; padding: 12px 16px; border-radius: 0 10px 10px 0; color: #312e81; }
-.sources { font-family: Consolas, "Courier New", monospace; font-size: 13.5px; color: var(--muted); }
-
-/* Stacked composition bars */
-.compose { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: grid; gap: 14px; }
-.compose .row { display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: center; }
-.compose .row > span { font-weight: 600; font-size: 15px; }
-.stack { display: flex; height: 34px; border-radius: 8px; overflow: hidden; }
-.stack div { color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; }
-.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--muted); }
-.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
-
-/* Score bars */
-.scores { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
-.panel h4 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.bar { display: grid; grid-template-columns: 160px 1fr 52px; gap: 12px; align-items: center; margin: 10px 0; font-size: 15px; }
-.bar .track { background: #f1f5f9; border-radius: 6px; height: 16px; overflow: hidden; }
-.bar .fill { height: 100%; border-radius: 6px; }
-.bar b { text-align: right; font-variant-numeric: tabular-nums; }
-
-/* Heatmap */
-.heat td.h { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
-.h0 { background: #fee2e2; color: #991b1b; }
-.h1 { background: #ffedd5; color: #9a3412; }
-.h2 { background: #fef9c3; color: #854d0e; }
-.h3 { background: #dcfce7; color: #166534; }
-.h4 { background: #bbf7d0; color: #14532d; }
-.heat th { text-align: center; }
-.heat th:first-child, .heat td:first-child { text-align: left; }
-.key { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; margin: 6px 0 0; }
-.key span { padding: 3px 10px; border-radius: 6px; }
-
-/* Tables */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 14px 0; border-radius: 12px; }
-.table-wrap table { margin: 0; min-width: 520px; }
-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); font-size: 15.5px; margin: 14px 0; }
-th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { background: #f1f5f9; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
-tr:last-child td { border-bottom: none; }
-tr.total td { font-weight: 700; background: #f8fafc; }
-
-/* Method steps */
-.steps { counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; position: relative; }
-.step::before { counter-increment: step; content: counter(step); position: absolute; top: 16px; right: 18px; font-size: 26px; font-weight: 700; color: #e2e8f0; }
-.step b { display: block; margin-bottom: 4px; }
-.step span { color: var(--muted); font-size: 15px; }
-
-footer { background: var(--night); color: #cbd5e1; padding: 40px 24px; margin-top: 60px; font-size: 15px; }
-footer .inner { max-width: 1160px; margin: auto; display: grid; gap: 8px; }
-footer a { color: #fff; }
-
-@media (max-width: 1100px) { .stats { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 820px) {
-  .two, .scores { grid-template-columns: 1fr; }
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .stats .stat:last-child { grid-column: span 2; }
-  header.hero { padding: 56px 20px 64px; }
-  section > h2 { font-size: 28px; }
-  .compose .row { grid-template-columns: 1fr; gap: 6px; }
-  .bar { grid-template-columns: 120px 1fr 46px; font-size: 14px; }
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal Document RAG on LegalBench-RAG 2024 | Rishabh Jain</title>
+  <meta name="description" content="An interactive study of contract-aware retrieval over 644 legal documents, using the LegalBench-RAG benchmark published in 2024.">
+  <link rel="stylesheet" href="report.css">
+  <script defer src="plotly.min.js"></script>
+  <script defer src="report-data.js"></script>
+  <script defer src="report.js"></script>
 </head>
-<body>
-
-<nav>
-  <div class="inner">
-    <a class="brand" href="#top">Legal Document RAG</a>
-    <a class="link" href="#summary">Summary</a>
-    <a class="link" href="#problem">The problem</a>
-    <a class="link" href="#data">Data</a>
-    <a class="link" href="#pipeline">Pipeline</a>
-    <a class="link" href="#results">Results</a>
-    <a class="link" href="#questions">Per question</a>
-    <a class="link" href="#next">Next steps</a>
-  </div>
-</nav>
-
-<header class="hero" id="top">
-  <div class="inner">
-    <div class="kicker">Retrieval-augmented generation &nbsp;|&nbsp; LegalBench-RAG</div>
-    <h1>Legal Document RAG</h1>
-    <p class="lede">Question answering over 644 legal contracts. The pipeline finds the contract a question names, retrieves its most relevant clauses and answers with quoted, cited evidence, or abstains.</p>
-    <div class="stats">
-      <div class="stat"><b>644</b><span>contracts and policies</span></div>
-      <div class="stat"><b>63,914</b><span>indexed chunks</span></div>
-      <div class="stat"><b>6,033</b><span>answerable benchmark questions</span></div>
-      <div class="stat"><b>0.900</b><span>Hit@5 on 10 sampled questions</span></div>
-      <div class="stat"><b>0.871</b><span>Ragas context recall</span></div>
+<body class="legal">
+<a class="skip" href="#report">Skip to the report.</a>
+<header class="masthead"><div class="masthead-inner">
+  <a class="wordmark" href="https://rishabhjain9196.github.io/#projects">Rishabh Jain / Research notes</a>
+  <nav aria-label="Report sections"><a href="#data">Dataset</a><a href="#method">Method</a><a href="#results">Results</a><a href="#diagnosis">Diagnostics</a><a href="#conclusion">Conclusion</a></nav>
+</div></header>
+<main id="report">
+  <section class="hero">
+    <div class="eyebrow">Language systems / Benchmark edition 2024</div>
+    <h1>Legal Document RAG<br><em>on LegalBench-RAG 2024</em></h1>
+    <div class="hero-bottom">
+      <div><p class="dek">Finding the right clause is not the same as answering the question. A small evaluation shows where contract-aware retrieval works and where evidence is lost between search and response.</p>
+      <p class="byline">Analysis by Rishabh Jain. The benchmark was published on 19 August 2024. Its underlying contracts span different years; 2024 is not a contract date or an evaluation-run date.</p></div>
+      <div class="hero-facts"><div><strong>644</strong><span>documents are indexed.</span></div><div><strong>9 / 10</strong><span>sampled questions have a retrieval hit.</span></div></div>
     </div>
-    <div class="actions">
-      <a class="btn primary" href="#summary">Read the findings</a>
-      <a class="btn ghost" href="https://github.com/rishabhjain9196/legal-document-rag/blob/main/notebooks/legal_document_rag.ipynb">Open the notebook</a>
-      <a class="btn ghost" href="https://github.com/rishabhjain9196/legal-document-rag">View the code</a>
-    </div>
-  </div>
-</header>
+  </section>
+  <p class="reader-note">Hover over charts for values, change the collection filters, and select a question to inspect its scores. Every chart has a data table and a CSV download. These are saved results, not a live legal advice service.</p>
+  <p id="report-error" class="error" role="alert" hidden></p>
+  <noscript><p class="error">JavaScript is required for interactive charts. The <a href="https://github.com/rishabhjain9196/legal-document-rag/blob/main/docs/walkthrough.md">written walkthrough and saved charts</a> remain available.</p></noscript>
 
-<main>
-
-<section id="summary" style="padding-top: 0">
-  <div class="findings">
-    <div class="finding green"><b>9 of 10</b><p>Questions where a top-five chunk overlapped the reference text.</p></div>
-    <div class="finding green"><b>0.871</b><p>Context recall. The retrieved excerpts covered most of each reference answer.</p></div>
-    <div class="finding amber"><b>0.623</b><p>MRR@5. The first overlapping chunk was ranked first for only 5 of the 9 hits.</p></div>
-    <div class="finding red"><b>0.525</b><p>Answer relevancy, the weakest score. Good evidence did not always become a direct answer.</p></div>
-    <div class="finding amber"><b>2 of 10</b><p>Questions where the model abstained, including at least one with a retrieval hit.</p></div>
-    <div class="finding"><b>0.802</b><p>Faithfulness. Most claims in the answers were supported by the quoted excerpts.</p></div>
-  </div>
-</section>
-
-<section id="problem">
-  <h2><span class="num">01</span>The problem</h2>
-  <p class="intro">Every benchmark question names a contract and then asks a generic legal question. A plain search across all contracts would return similar clauses from the wrong documents.</p>
-
-  <div class="qa">
-    <div>
-      <div class="label">How each question is split</div>
-      <div class="route">
-        <span class="pill contract">Consider the Non-Disclosure Agreement between CopAcc and ToP Mentors;</span>
-        <span class="arrow">+</span>
-        <span class="pill question">Does the document indicate that the Agreement does not grant the Receiving Party any rights to the Confidential Information?</span>
+  <section class="report-section" id="data">
+    <div class="section-head"><span class="section-no">01 / Dataset</span><h2>Four collections, very different documents.</h2><p>The project uses the LegalBench-RAG corpus and reference spans. The local corpus and question counts below describe this project, not every version of the benchmark.</p></div>
+    <div class="section-body">
+      <p class="chart-intro">The 644 documents include non-disclosure agreements, commercial contracts, merger agreements and privacy policies. CUAD supplies most documents. MAUD supplies most text because its agreements are much longer.</p>
+      <figure class="figure">
+        <div class="figure-head"><h3>How the collections contribute to the corpus.</h3><span class="chart-number">Figure 01</span></div>
+        <div class="controls"><label for="corpus-view">Compare the collections by <select id="corpus-view"></select></label></div>
+        <div id="corpus" class="chart" data-chart aria-label="Corpus composition chart"></div>
+        <p id="corpus-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="corpus">Download chart data.</button><button data-reset="corpus">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="corpus-table" class="table-scroll"></div></details>
+      </figure>
+      <figure class="figure">
+        <div class="figure-head"><h3>Document lengths span several orders of magnitude.</h3><span class="chart-number">Figure 02</span></div>
+        <div id="lengths" class="chart" data-chart aria-label="Document length means and ranges on a logarithmic axis"></div>
+        <p id="lengths-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="lengths">Download chart data.</button><button data-reset="lengths">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="lengths-table" class="table-scroll"></div></details>
+      </figure>
+      <figure class="figure">
+        <div class="figure-head"><h3>Some benchmark questions lack a source document in this corpus.</h3><span class="chart-number">Figure 03</span></div>
+        <div id="eligibility" class="chart" data-chart aria-label="Eligible questions and questions with unavailable source documents"></div>
+        <p id="eligibility-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="eligibility">Download chart data.</button><button data-reset="eligibility">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="eligibility-table" class="table-scroll"></div></details>
+      </figure>
+      <div class="analysis">
+        <div><h3>Length changes the retrieval problem.</h3><p>The shortest document has 219 words and the longest has 156,104. The median is 5,494 words, compared with a mean of 15,248. Passing whole documents to the answer model would obscure the relevant clause and increase the context sent to the API.</p></div>
+        <div><h3>Availability limits the evaluation pool.</h3><p>Of 6,695 extracted questions, 6,033 have an available source document. Ten of those questions were evaluated. PrivacyQA contributes three documents to the corpus but no questions to this evaluated sample.</p></div>
       </div>
     </div>
-    <div>
-      <div class="label">Answer from the notebook</div>
-      <p style="margin: 4px 0 10px">Yes. The relevant clause states:</p>
-      <blockquote>"Mentor shall not have any right, license, title or interest in or to any Confidential Information, except the limited right to review, assess and help develop such Confidential Information in connection with the Copernicus Accelerator 2017" [Source 2]</blockquote>
+  </section>
+
+  <section class="report-section" id="method">
+    <div class="section-head"><span class="section-no">02 / Method and engineering</span><h2>Identify the contract before searching its clauses.</h2><p>A question names a contract before a semicolon. That description and the legal question serve different purposes.</p></div>
+    <div class="section-body">
+      <ol class="method">
+        <li><b>Preserve the legal wording.</b><span>Cleaning keeps casing and negation. Contact details and separator lines are replaced with spaces, and whitespace is normalised. An offset map preserves the connection to the original source characters. Stop-word removal is used only in exploratory analysis.</span></li>
+        <li><b>Create two representations of each document.</b><span>LangChain's recursive text splitter creates windows of up to 1,500 characters with a 200-character overlap. A separate document card contains the file name and first 1,500 characters. This gives 63,914 chunks and 644 cards.</span></li>
+        <li><b>Build separate vector collections.</b><span>OpenAI text-embedding-3-small embeds the chunks and cards. Chroma persists them in two local collections. The stored index is reused rather than rebuilt for every question.</span></li>
+        <li><b>Route and retrieve.</b><span>The contract description selects the closest document card. The legal question then searches only that contract's chunks. The five highest-ranked chunks become the answer context.</span></li>
+        <li><b>Generate a constrained answer.</b><span>OpenAI gpt-4o-mini runs at temperature zero. The prompt asks for exact quotes, source citations and abstention when the evidence is insufficient. If no excerpts are found, the chain abstains without a generation call.</span></li>
+        <li><b>Evaluate retrieval separately from generation.</b><span>Reference-span overlap supplies Hit@5 and MRR@5. Ragas uses an LLM judge for faithfulness, answer relevancy, context precision and context recall. These measures answer different questions and should not be combined into one accuracy score.</span></li>
+      </ol>
+      <figure class="figure">
+        <div class="figure-head"><h3>Merger agreements account for most of the chunk index.</h3><span class="chart-number">Figure 04</span></div>
+        <div class="controls"><label for="index-size-view">Measure the index by <select id="index-size-view"></select></label></div>
+        <div id="index-size" class="chart" data-chart aria-label="Chunk index size by collection"></div>
+        <p id="index-size-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="index-size">Download chart data.</button><button data-reset="index-size">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="index-size-table" class="table-scroll"></div></details>
+      </figure>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Technical layer</th><th>Implementation and purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Analysis</td><td>Python 3.12, pandas and NumPy organise the corpus and evaluation results. NLTK and scikit-learn support token analysis and TF-IDF comparisons.</td></tr>
+          <tr><td>Retrieval orchestration</td><td>LangChain connects text splitting, embeddings, Chroma retrieval and OpenAI generation.</td></tr>
+          <tr><td>Evaluation</td><td>Ragas scores evidence use and answer quality. The notebook also computes direct character-span overlap metrics.</td></tr>
+          <tr><td>Visual reporting</td><td>Matplotlib and seaborn produce saved notebook figures. This report uses local Plotly.js, plain JavaScript, HTML and CSS on GitHub Pages. It needs no application server or external chart CDN.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="sample-note">Running the notebook sends document text, questions and retrieved excerpts to OpenAI. Reading this report and exporting its saved data make no model calls. The report contains aggregate statistics and question identifiers, not the document corpus.</p>
     </div>
-    <div>
-      <div class="label">Sources, with character offsets in the original file</div>
-      <div class="sources">
-        [Source 1] contractnli/CopAcc_NDA-and-ToP-Mentors_2.0_2017.txt, characters 8059-9377<br>
-        [Source 2] contractnli/CopAcc_NDA-and-ToP-Mentors_2.0_2017.txt, characters 10540-11970<br>
-        [Source 3] to [Source 5] come from the same contract.
+  </section>
+
+  <section class="report-section" id="results">
+    <div class="section-head"><span class="section-no">03 / Results</span><h2>Retrieval is stronger than the final answer.</h2><p>The sample contains three ContractNLI, four CUAD and three MAUD questions, selected with seed 42.</p></div>
+    <div class="section-body">
+      <figure class="figure">
+        <div class="figure-head"><h3>Compare retrieval and answering scores.</h3><span class="chart-number">Figure 05</span></div>
+        <div class="controls"><label for="evaluation-view">Evaluate <select id="evaluation-view"></select></label></div>
+        <div id="evaluation" class="chart" data-chart aria-label="Evaluation metrics with collection filters"></div>
+        <p id="evaluation-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="evaluation">Download chart data.</button><button data-reset="evaluation">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="evaluation-table" class="table-scroll"></div></details>
+      </figure>
+      <blockquote class="pullquote">Nine retrieval hits produced only eight non-abstaining responses.<small>The model abstained twice. At least one retrieval hit therefore did not lead to an answer. A partial span overlap can still be insufficient evidence.</small></blockquote>
+      <div class="analysis">
+        <div><h3>The evidence is often present.</h3><p>Hit@5 is 0.900 and context recall is 0.871. This supports retaining document-aware retrieval as the baseline. It does not establish that the entire benchmark is solved.</p></div>
+        <div><h3>Evidence use needs more attention.</h3><p>Answer relevancy is 0.525, while faithfulness is 0.802. A response can remain close to the supplied excerpts without directly answering the question. High faithfulness alone is not a measure of usefulness.</p></div>
       </div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Measure</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td>Hit@5</td><td>At least one of the five retrieved chunks overlaps a reference text span.</td></tr>
+          <tr><td>MRR@5</td><td>The reciprocal rank of the first overlapping chunk is averaged across questions. Misses score zero.</td></tr>
+          <tr><td>Faithfulness</td><td>The judge assesses whether generated claims are supported by the retrieved excerpts.</td></tr>
+          <tr><td>Answer relevancy</td><td>The judge assesses whether the response addresses the question.</td></tr>
+          <tr><td>Context precision and recall</td><td>The judge assesses the ordering of useful excerpts and their coverage of the reference answer.</td></tr>
+        </tbody>
+      </table></div>
     </div>
-  </div>
-  <ul class="takeaways">
-    <li><b>The purple part identifies the document.</b> It is matched to a document card to choose one contract.</li>
-    <li><b>The blue part is the legal question.</b> It is searched only within the chosen contract's chunks.</li>
-    <li><b>All five sources come from the right contract,</b> and each one maps back to exact characters in the source file.</li>
-  </ul>
-</section>
+  </section>
 
-<section id="data">
-  <h2><span class="num">02</span>The data</h2>
-  <p class="intro">The corpus comes from LegalBench-RAG, which combines four legal datasets. Each benchmark answer is a span of text, given as a file path and a character range.</p>
-
-  <div class="table-wrap"><table>
-    <thead><tr><th>Group</th><th>Content</th><th class="r">Documents</th><th class="r">Mean words</th></tr></thead>
-    <tbody>
-      <tr><td>ContractNLI</td><td>Non-disclosure agreements</td><td class="r">93</td><td class="r">1,612</td></tr>
-      <tr><td>CUAD</td><td>Commercial contracts</td><td class="r">431</td><td class="r">7,853</td></tr>
-      <tr><td>MAUD</td><td>Merger agreements</td><td class="r">117</td><td class="r">53,646</td></tr>
-      <tr><td>PrivacyQA</td><td>Privacy policies</td><td class="r">3</td><td class="r">2,953</td></tr>
-      <tr class="total"><td>Total</td><td></td><td class="r">644</td><td class="r">15,248</td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>Few merger agreements, most of the text</h3>
-  <div class="compose">
-    <div class="row"><span>Share of documents</span>
-      <div class="stack">
-        <div style="width: 14.4%; background: var(--nda)">14%</div>
-        <div style="width: 66.9%; background: var(--cuad)">67%</div>
-        <div style="width: 18.2%; background: var(--maud)">18%</div>
-        <div style="width: 0.5%; background: var(--pqa)"></div>
-      </div>
+  <section class="report-section" id="diagnosis">
+    <div class="section-head"><span class="section-no">04 / Diagnostics</span><h2>Look beyond the averages.</h2><p>The ten saved rows expose different failure modes. A single aggregate score would conceal them.</p></div>
+    <div class="section-body">
+      <figure class="figure">
+        <div class="figure-head"><h3>Inspect an individual question.</h3><span class="chart-number">Figure 06</span></div>
+        <div class="controls"><label for="question-choice">Select a question. <select id="question-choice"></select></label></div>
+        <div id="question-scores" class="chart heat" data-chart aria-label="Question-level evaluation heatmap"></div>
+        <div id="question-readout" class="readout" aria-live="polite"></div>
+        <p id="question-scores-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="question-scores">Download chart data.</button><button data-reset="question-scores">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="question-scores-table" class="table-scroll"></div></details>
+      </figure>
+      <figure class="figure">
+        <div class="figure-head"><h3>The first overlapping chunk does not always rank first.</h3><span class="chart-number">Figure 07</span></div>
+        <div id="ranking" class="chart" data-chart aria-label="Rank distribution of the first reference-span overlap"></div>
+        <p id="ranking-note" class="chart-note"></p>
+        <div class="chart-tools"><button data-download="ranking">Download chart data.</button><button data-reset="ranking">Reset the chart.</button></div>
+        <details><summary>View the data table.</summary><div id="ranking-table" class="table-scroll"></div></details>
+      </figure>
+      <ul class="sources">
+        <li>ContractNLI 344 is the only retrieval miss. Its faithfulness score is still 1.000, while recall and relevancy are zero. This is why faithful wording must not be confused with successful question answering.</li>
+        <li>CUAD 3537 has a first-ranked retrieval hit and context recall of 1.000, but both answer relevancy and faithfulness are zero. Its answer should be inspected before changing the retrieval strategy.</li>
+        <li>Four of the nine hits first overlap the reference below rank one. Two first overlap at rank five. This motivates a controlled re-ranking experiment, although the current run does not measure its benefit.</li>
+      </ul>
+      <details><summary>See the additional corpus exploration.</summary>
+        <p>The notebook also examines frequent terms and TF-IDF similarity. The following charts are saved notebook figures rather than interactive measurements.</p>
+        <figure><img src="assets/word-frequencies.png" loading="lazy" alt="Counts of the twenty most frequent words after stop-word removal"><figcaption>Common legal terms dominate the token counts.</figcaption></figure>
+        <figure><img src="assets/document-lengths.png" loading="lazy" alt="Document length distributions and box plots by collection"><figcaption>The distributions explain why mean document length is much larger than the median.</figcaption></figure>
+      </details>
     </div>
-    <div class="row"><span>Share of words</span>
-      <div class="stack">
-        <div style="width: 1.5%; background: var(--nda)"></div>
-        <div style="width: 34.5%; background: var(--cuad)">35%</div>
-        <div style="width: 63.9%; background: var(--maud)">64%</div>
-        <div style="width: 0.1%; background: var(--pqa)"></div>
-      </div>
-    </div>
-    <div class="legend">
-      <span><i style="background: var(--nda)"></i>ContractNLI</span>
-      <span><i style="background: var(--cuad)"></i>CUAD</span>
-      <span><i style="background: var(--maud)"></i>MAUD</span>
-      <span><i style="background: var(--pqa)"></i>PrivacyQA</span>
-    </div>
-  </div>
-  <ul class="takeaways">
-    <li><b>MAUD merger agreements are 18% of documents but about 64% of all words.</b> Word shares are calculated from document counts and mean lengths.</li>
-    <li><b>The 6,695 benchmark questions include 6,033 whose source document is in the corpus.</b> Only these are used for evaluation.</li>
-  </ul>
+  </section>
 
-  <h3>Document lengths</h3>
-  <figure><a href="assets/document-lengths.png"><img src="assets/document-lengths.png" alt="Histogram and box plot of document lengths by collection, on a log scale" loading="lazy"></a></figure>
-  <ul class="takeaways">
-    <li><b>Lengths range from 219 to 156,104 words.</b> The median document has 5,494 words and the mean has 15,248.</li>
-    <li><b>NDAs cluster around 1,000 to 2,000 words, and merger agreements around 50,000.</b> Commercial contracts span the widest range.</li>
-    <li><b>Documents this long must be split into chunks</b> before they can be searched and passed to a model.</li>
-  </ul>
-
-  <div class="two">
-    <div>
-      <h3>Most frequent words</h3>
-      <figure><a href="assets/word-frequencies.png"><img src="assets/word-frequencies.png" alt="The 20 most frequent words after stop-word removal" loading="lazy"></a></figure>
-      <ul class="takeaways">
-        <li><b>"Company", "shall" and "agreement" lead the list.</b> These are common legal terms.</li>
-        <li><b>"Parent", "merger", "subsidiaries" and "stock" also rank high.</b> This reflects the large share of text in merger agreements.</li>
+  <section class="report-section" id="conclusion">
+    <div class="section-head"><span class="section-no">05 / Conclusion</span><h2>A useful baseline, not a legal decision system.</h2><p>The next work should isolate errors before adding more infrastructure.</p></div>
+    <div class="section-body">
+      <h3>What the project establishes.</h3>
+      <p>The implementation demonstrates a complete route, retrieve and answer workflow with source offsets and saved evaluation results. On this ten-question sample, it usually retrieves text that overlaps the reference. The weaker answer relevancy shows that retrieval coverage and useful responses are separate goals.</p>
+      <h3>What a project owner should prioritise.</h3>
+      <ol class="method">
+        <li><b>Classify failures before changing models.</b><span>Review the selected contract, retrieved span and generated response for each question. Label routing, ranking, incomplete-context and answering failures separately. This avoids treating every low score as an embedding problem.</span></li>
+        <li><b>Test one intervention at a time.</b><span>Compare re-ranking, richer document cards and clause-aware chunking against the current baseline. Keep the question set fixed and record both improved and regressed cases. These are proposed experiments, not demonstrated improvements.</span></li>
+        <li><b>Keep abstention tied to evidence.</b><span>Do not remove cautious behaviour merely to increase response rate. Review when the retrieved context genuinely supports an answer, then test prompt changes against that judgement.</span></li>
+        <li><b>Expand evaluation before claiming reliability.</b><span>Use a larger, balanced sample across collections and question types. Add human review of citations and factual claims, and record latency and API usage. The current report does not measure production cost, throughput or legal accuracy.</span></li>
+      </ol>
+      <h3>Limits that change the interpretation.</h3>
+      <ul class="sources">
+        <li>One question changes Hit@5 by ten percentage points. Collection filters contain only three or four cases and should not be used to rank datasets.</li>
+        <li>Routing selects a single contract. A routing mistake can exclude the correct evidence entirely.</li>
+        <li>Ragas uses an LLM judge. Scores and generated responses can vary between runs despite a fixed sample and temperature zero.</li>
+        <li>The system is a research prototype. Its generated answers are not legal advice and should not replace qualified review.</li>
+      </ul>
+      <h3>Sources and reproducibility.</h3>
+      <ul class="sources">
+        <li><a href="https://arxiv.org/abs/2408.10343">LegalBench-RAG, published in August 2024</a>, supplies the benchmark provenance.</li>
+        <li>The <a href="https://github.com/rishabhjain9196/legal-document-rag/blob/main/notebooks/legal_document_rag.ipynb">saved notebook</a> and <a href="assets/metrics.json">metrics file</a> contain the reported results.</li>
+        <li>The <a href="https://github.com/rishabhjain9196/legal-document-rag/blob/main/scripts/export_report_data.py">report exporter</a> reads saved tables without calling a model. The <a href="https://github.com/rishabhjain9196/legal-document-rag/blob/main/requirements.txt">dependency manifest</a> records the Python environment.</li>
       </ul>
     </div>
-    <div>
-      <h3>How alike the contracts are</h3>
-      <figure><a href="assets/similarity-first-10.png"><img src="assets/similarity-first-10.png" alt="TF-IDF cosine similarity between the first ten documents" loading="lazy"></a></figure>
-      <ul class="takeaways">
-        <li><b>The first ten documents, all NDAs, have a mean similarity of 0.19.</b> Ten random documents have 0.23.</li>
-        <li><b>Contracts share vocabulary but differ in wording.</b> This is why the contract must be found before its clauses are searched.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section id="pipeline">
-  <h2><span class="num">03</span>The pipeline</h2>
-  <p class="intro">The documents are indexed once. Each question is then routed to one contract before its clauses are searched.</p>
-  <figure class="tall"><a href="assets/rag-process.svg"><img src="assets/rag-process.svg" alt="Pipeline overview: indexing, contract-aware retrieval and evaluation" loading="lazy"></a></figure>
-  <div class="steps" style="margin-top: 18px">
-    <div class="step"><b>Prepare</b><span>Clean the text while keeping casing and negation. An offset map links every character back to the source file.</span></div>
-    <div class="step"><b>Index</b><span>Split documents into 63,914 chunks of 1,500 characters with a 200-character overlap. Build one document card per contract from its file name and first 1,500 characters.</span></div>
-    <div class="step"><b>Embed</b><span>Embed chunks and cards with OpenAI <code>text-embedding-3-small</code> and store them in two local Chroma collections.</span></div>
-    <div class="step"><b>Route</b><span>Split the question at the first semicolon. Match the contract description to the closest document card.</span></div>
-    <div class="step"><b>Retrieve</b><span>Search only the routed contract's chunks with the legal question and keep the top five.</span></div>
-    <div class="step"><b>Answer</b><span><code>gpt-4o-mini</code> at temperature 0 answers with exact quotes and source citations, or abstains when no clause supports an answer.</span></div>
-  </div>
-</section>
-
-<section id="results">
-  <h2><span class="num">04</span>Results</h2>
-  <p class="intro">Ten questions were evaluated: three NDA, four CUAD and three MAUD questions, chosen with seed 42. Every metric has a score for all ten.</p>
-  <div class="scores">
-    <div class="panel">
-      <h4>Retrieval</h4>
-      <div class="bar"><span>Hit@5</span><div class="track"><div class="fill" style="width: 90%; background: var(--green)"></div></div><b>0.900</b></div>
-      <div class="bar"><span>MRR@5</span><div class="track"><div class="fill" style="width: 62.3%; background: var(--amber)"></div></div><b>0.623</b></div>
-      <div class="bar"><span>Context recall</span><div class="track"><div class="fill" style="width: 87.1%; background: var(--green)"></div></div><b>0.871</b></div>
-      <div class="bar"><span>Context precision</span><div class="track"><div class="fill" style="width: 75.7%; background: var(--green)"></div></div><b>0.757</b></div>
-    </div>
-    <div class="panel">
-      <h4>Answering</h4>
-      <div class="bar"><span>Faithfulness</span><div class="track"><div class="fill" style="width: 80.2%; background: var(--green)"></div></div><b>0.802</b></div>
-      <div class="bar"><span>Answer relevancy</span><div class="track"><div class="fill" style="width: 52.5%; background: var(--red)"></div></div><b>0.525</b></div>
-      <p style="color: var(--muted); font-size: 14.5px; margin: 16px 0 0">Context recall and precision are Ragas metrics, but they measure the retrieved excerpts, so they are grouped with retrieval here.</p>
-    </div>
-  </div>
-  <ul class="takeaways">
-    <li><b>Retrieval is the stronger step.</b> Hit@5 is 0.900 and context recall is 0.871.</li>
-    <li><b>Answering is the weaker step.</b> Answer relevancy is 0.525, well below the retrieval scores.</li>
-    <li><b>Ranking leaves room to improve.</b> An MRR@5 of 0.623 means the first overlapping chunk is often not the top result.</li>
-  </ul>
-  <div class="howto"><b>What the measures mean:</b> Hit@5 counts a question when any of the top five chunks overlaps the reference span. MRR@5 scores 1 for a first-place hit, 0.5 for second place and 0.2 for fifth. The four Ragas scores are judged by an LLM.</div>
-</section>
-
-<section id="questions">
-  <h2><span class="num">05</span>Question by question</h2>
-  <p class="intro">Averages hide where the pipeline fails. Each row below is one evaluated question, with its six scores from the notebook.</p>
-  <div class="table-wrap"><table class="heat" style="min-width: 760px">
-    <thead><tr><th>Question</th><th>Hit@5</th><th>MRR@5</th><th>Faithful</th><th>Relevancy</th><th>Precision</th><th>Recall</th></tr></thead>
-    <tbody>
-      <tr><td>NDA 344</td><td class="h h0">0</td><td class="h h0">0.000</td><td class="h h4">1.000</td><td class="h h0">0.000</td><td class="h h1">0.250</td><td class="h h0">0.000</td></tr>
-      <tr><td>NDA 381</td><td class="h h4">1</td><td class="h h4">1.000</td><td class="h h4">1.000</td><td class="h h2">0.597</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-      <tr><td>NDA 351</td><td class="h h4">1</td><td class="h h0">0.200</td><td class="h h4">1.000</td><td class="h h2">0.710</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-      <tr><td>CUAD 2307</td><td class="h h4">1</td><td class="h h1">0.333</td><td class="h h4">1.000</td><td class="h h2">0.745</td><td class="h h2">0.583</td><td class="h h4">1.000</td></tr>
-      <tr><td>CUAD 1100</td><td class="h h4">1</td><td class="h h0">0.200</td><td class="h h2">0.667</td><td class="h h2">0.577</td><td class="h h0">0.200</td><td class="h h4">1.000</td></tr>
-      <tr><td>CUAD 3537</td><td class="h h4">1</td><td class="h h4">1.000</td><td class="h h0">0.000</td><td class="h h0">0.000</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-      <tr><td>CUAD 457</td><td class="h h4">1</td><td class="h h4">1.000</td><td class="h h4">1.000</td><td class="h h3">0.936</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-      <tr><td>MAUD 862</td><td class="h h4">1</td><td class="h h4">1.000</td><td class="h h4">1.000</td><td class="h h1">0.430</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-      <tr><td>MAUD 1202</td><td class="h h4">1</td><td class="h h4">1.000</td><td class="h h2">0.500</td><td class="h h2">0.629</td><td class="h h2">0.533</td><td class="h h2">0.714</td></tr>
-      <tr><td>MAUD 773</td><td class="h h4">1</td><td class="h h2">0.500</td><td class="h h3">0.857</td><td class="h h2">0.625</td><td class="h h4">1.000</td><td class="h h4">1.000</td></tr>
-    </tbody>
-  </table></div>
-  <div class="key"><span class="h0">below 0.25</span><span class="h1">0.25 to 0.49</span><span class="h2">0.50 to 0.74</span><span class="h3">0.75 to 0.99</span><span class="h4">1.00</span></div>
-  <ul class="takeaways amber" style="margin-top: 18px">
-    <li><b>NDA 344 is the only retrieval miss.</b> Its recall and relevancy are 0, yet its faithfulness is 1.000. Faithfulness only checks claims against the excerpts, so a cautious answer can score well after a miss.</li>
-    <li><b>CUAD 3537 is an answering failure.</b> The reference clause was ranked first and recall is 1.000, but faithfulness and relevancy are both 0.</li>
-    <li><b>Four hits had their first overlapping chunk below first place.</b> For NDA 351 and CUAD 1100, it came fifth.</li>
-    <li><b>Answer relevancy is the most uneven score.</b> It ranges from 0 to 0.936, and only CUAD 457 scores above 0.75.</li>
-  </ul>
-</section>
-
-<section id="next">
-  <h2><span class="num">06</span>Next steps and limitations</h2>
-  <div class="two">
-    <div>
-      <h3 style="margin-top: 10px">What to try next</h3>
-      <ul class="takeaways green">
-        <li><b>Re-rank the retrieved chunks</b> so that the most relevant clause comes first, which targets the 0.623 MRR.</li>
-        <li><b>Adjust the prompt</b> so that partly matching clauses lead to an answer rather than an abstention.</li>
-        <li><b>Review routing errors</b> and test richer document cards.</li>
-        <li><b>Compare clause-aware chunking</b> with fixed 1,500-character windows.</li>
-      </ul>
-    </div>
-    <div>
-      <h3 style="margin-top: 10px">Limitations</h3>
-      <ul class="takeaways red">
-        <li><b>Ten questions is a small sample.</b> One question changes Hit@5 by 0.1.</li>
-        <li><b>Routing picks one contract.</b> If it picks the wrong one, every excerpt comes from that contract.</li>
-        <li><b>Ragas scores are judged by an LLM</b> and can vary between runs.</li>
-        <li><b>The answers are model-generated</b> and are not legal advice.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
+  </section>
 </main>
-
-<footer>
-  <div class="inner">
-    <div><b>Rishabh Jain</b> &nbsp;|&nbsp; <a href="https://github.com/rishabhjain9196/legal-document-rag">Code and notebook on GitHub</a></div>
-    <div>Documents and questions: <a href="https://github.com/zeroentropy-ai/legalbenchrag">LegalBench-RAG</a> (Pipitone and Houir Alami, 2024, <a href="https://arxiv.org/abs/2408.10343">arXiv:2408.10343</a>), built on ContractNLI, CUAD, MAUD and PrivacyQA. The documents are not redistributed.</div>
-    <div>Built with LangChain, Chroma, OpenAI <code style="background: transparent; color: #cbd5e1; padding: 0">text-embedding-3-small</code> and <code style="background: transparent; color: #cbd5e1; padding: 0">gpt-4o-mini</code>, and Ragas.</div>
-  </div>
-</footer>
-
+<footer><div class="footer-inner"><span>Rishabh Jain / LegalBench-RAG 2024</span><div class="footer-links"><a href="https://github.com/rishabhjain9196/legal-document-rag">View the repository.</a><a href="https://rishabhjain9196.github.io/#projects">Return to the portfolio.</a><a href="plotly-LICENSE.txt">Read the chart-library licence.</a></div></div></footer>
 </body>
 </html>

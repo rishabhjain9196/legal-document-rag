@@ -1,4 +1,4 @@
-# Legal Document RAG
+# Legal Document RAG on LegalBench-RAG 2024
 
 **Question answering over legal contracts, with contract-aware retrieval and cited answers.**
 
@@ -9,6 +9,15 @@ This project answers questions about 644 contracts from the [LegalBench-RAG](htt
 ![Pipeline overview: indexing, contract-aware retrieval and evaluation](docs/assets/rag-process.svg)
 
 **Explore:** [Visual report](https://rishabhjain9196.github.io/legal-document-rag/) · [Notebook](notebooks/legal_document_rag.ipynb) · [Walkthrough](docs/walkthrough.md) · [Dataset setup](data/README.md) · [Evaluation chart](docs/assets/evaluation.png)
+
+The title uses the benchmark's publication year, 2024. It is not the date of every underlying contract or the evaluation run.
+
+## Interactive report
+
+- The [published report](https://rishabhjain9196.github.io/legal-document-rag/) contains seven interactive charts, collection filters and a per-question score explorer.
+- It covers the corpus, retrieval architecture, libraries, evaluation definitions, limitations and proposed experiments. Each chart has a data table and CSV download.
+- Open `docs/index.html` locally to read the same report. It uses a local Plotly.js 4.1.1 bundle under the [MIT licence](docs/plotly-LICENSE.txt), with no model calls or external chart services.
+- Run `python scripts/export_report_data.py` to regenerate chart data from the saved notebook outputs and metrics. This does not rerun embeddings or evaluation.
 
 ## Results
 
